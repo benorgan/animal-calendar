@@ -1,5 +1,7 @@
 # Animal Calendar React Native app
 
+A calendar app that shows the current week with pictures of cute cats (or dogs) for each day. 
+
 ## Requirements
 
 - Node v20
