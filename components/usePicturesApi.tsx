@@ -37,5 +37,5 @@ export const usePicturesApi = (type: PictureType = PictureType.Cat, limit: numbe
     fetchPictures()
   }, [])
 
-  return { pictures }
+  return { pictures, fetchPictures }
 }

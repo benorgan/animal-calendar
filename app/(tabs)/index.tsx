@@ -1,25 +1,38 @@
 import { FlatList, ImageBackground, SafeAreaView, StyleSheet } from 'react-native'
 import { Text, View } from '@/components/Themed'
-import { addDays, isEqual, startOfDay, startOfWeek } from 'date-fns'
+import { Day, addDays, isEqual, startOfDay, startOfWeek } from 'date-fns'
 import { usePicturesApi } from '@/components/usePicturesApi'
 import { PICTURE_TYPE, DAYS_TO_SHOW, WEEK_STARTS_ON } from '@/constants/Settings'
+import { useState } from 'react'
 
 const loading = require('../../assets/images/loading.gif')
 
 export default function Calendar() {
 
-  const { pictures } = usePicturesApi(PICTURE_TYPE, DAYS_TO_SHOW)
+  const { pictures, fetchPictures } = usePicturesApi(PICTURE_TYPE, DAYS_TO_SHOW)
+  const [refreshing, setRefreshing] = useState<boolean>(false)
 
-  const start = startOfWeek(new Date(), {weekStartsOn: WEEK_STARTS_ON})
-  const weekCalendar = []
+  const generateCalendar = (weekStartsOn: Day, daysToShow: number): Array<Date> => {
+    const start = startOfWeek(new Date(), { weekStartsOn })
+    const calendar = []
+  
+    for(let i = 0; i < daysToShow; i++) {
+      calendar.push(addDays(start, i))
+    }
 
-  for(let i = 0; i < DAYS_TO_SHOW; i++) {
-    weekCalendar.push(addDays(start, i))
+    return calendar
+  }
+
+  const refreshPictures = async () => {
+    setRefreshing(true)
+    await fetchPictures()
+    setRefreshing(false)
   }
 
   const renderDay = ({ item , index}: { item: Date, index: number}) => {
 
     const today = new Date()
+
     // Need to check startOfDay here so we're comparing the same time
     const isToday = isEqual(startOfDay(item), startOfDay(today))
 
@@ -37,7 +50,10 @@ export default function Calendar() {
           source={pictures.length ? { uri: pictures[index] } : loading}
         >
           <Text style={isToday ? [styles.dayTitle, styles.todayDayTitle] : styles.dayTitle}>
-            {item.toLocaleDateString(undefined, options)}
+            {
+              // Omit locale parameter since we want to use the default 
+              item.toLocaleDateString(undefined, options)
+            }
           </Text> 
         </ImageBackground>
       </View>
@@ -48,9 +64,11 @@ export default function Calendar() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>{`${PICTURE_TYPE} calendar`}</Text>
       <FlatList
-        data={weekCalendar}
+        data={generateCalendar(WEEK_STARTS_ON, DAYS_TO_SHOW)}
         renderItem={renderDay}
         style={styles.list}
+        onRefresh={refreshPictures}
+        refreshing={refreshing}
       />
     </SafeAreaView>
   )
@@ -95,7 +113,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 170, 255, 0.7)'
   },
   image: {
-    height: 250,
+    height: 200,
     width: 'auto',
     backgroundColor: '#eee'
   }
